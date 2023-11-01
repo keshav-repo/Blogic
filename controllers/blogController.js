@@ -1,8 +1,18 @@
 const Blog = require("../models/Blog");
 const fs = require("fs");
-const cloudinary = require("cloudinary").v2;
+const { async } = require("q");
+const cloudinary = require("cloudinary").v2,
+      S3HELPER = require('../service/s3helper'),
+      _ = require('underscore');
+var L = null;
 
-exports.getAllBlogs = async (req, res) => {
+function blogController(opts){
+   L = opts.L || require('pino');
+   let self = this;
+   self.s3helper = new S3HELPER(opts);
+}
+
+blogController.prototype.getAllBlogs = async (req, res) => {
   try {
     const blogs = await Blog.find().populate("owner").sort({ createdAt: -1 });
     res.status(200).json({
@@ -20,7 +30,7 @@ exports.getAllBlogs = async (req, res) => {
   }
 };
 
-exports.getBlogById = async (req, res) => {
+blogController.prototype.getBlogById = async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.blogId).populate("owner");
     if (!blog) {
@@ -44,31 +54,48 @@ exports.getBlogById = async (req, res) => {
   }
 };
 
-exports.createBlog = async (req, res) => {
-  try {
-    const cloudinaryLink = await cloudinary.uploader.upload(req.file.path);
+blogController.prototype.createBlog = async (req, res) => {
+  let self = this;
+  self.s3helper.uploadfile(req.file.path)
+  .then(function(){
+      res.status(200).json({
+        status: "success",
+        message: 'image uploaded to s3',
+      });
+  })
+  .catch(function(){
+      res.status(500).json({
+        status: "fail",
+        message: err.message,
+      });
+  });
 
-    const blog = await Blog.create({
-      ...req.body,
-      // image: req.file.path.replace(/\\/g, "/"),
-      image: cloudinaryLink.url,
-      owner: req.user._id,
-    });
-    res.status(200).json({
-      status: "success",
-      data: {
-        blog,
-      },
-    });
-  } catch (err) {
-    res.status(400).json({
-      status: "fail",
-      message: err.message,
-    });
-  }
+  // try {
+   // const cloudinaryLink = await cloudinary.uploader.upload(req.file.path);
+
+   
+
+    // const blog = await Blog.create({
+    //     ...req.body,
+    //     // image: req.file.path.replace(/\\/g, "/"),
+    //     image: 'https://assets.myntassets.com/h_720,q_90,w_540/v1/assets/images/23436634/2023/5/27/b70db43a-6a8d-4844-8184-892b1561b6661685128357517WomenLehengaCholi2.jpg',
+    //     owner: req.user._id,
+    //   });
+    //   res.status(200).json({
+    //     status: "success",
+    //     data: {
+    //       blog,
+    //     },
+    //   });
+    // } catch (err) {
+    //   res.status(400).json({
+    //     status: "fail",
+    //     message: err.message,
+    //   });
+    // }
 };
 
-exports.updateBlog = async (req, res) => {
+blogController.prototype.updateBlog = async (req, res) => {
   try {
     let updatedBlog;
     if (req.file) {
@@ -129,7 +156,7 @@ exports.updateBlog = async (req, res) => {
   }
 };
 
-exports.deleteBlog = async (req, res) => {
+blogController.prototype.deleteBlog = async (req, res) => {
   try {
     const deletingBlog = await Blog.findById(req.params.blogId);
     if (!deletingBlog) {
@@ -167,7 +194,7 @@ exports.deleteBlog = async (req, res) => {
   }
 };
 
-exports.likeBlog = async (req, res) => {
+blogController.prototype.likeBlog = async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.blogId);
     const user = req.user;
@@ -215,7 +242,7 @@ exports.likeBlog = async (req, res) => {
   }
 };
 
-exports.unlikeBlog = async (req, res) => {
+blogController.prototype.unlikeBlog = async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.blogId);
     const user = req.user;
@@ -270,7 +297,7 @@ exports.unlikeBlog = async (req, res) => {
   }
 };
 
-exports.getAllBlogByUser = async (req, res) => {
+blogController.prototype.getAllBlogByUser = async (req, res) => {
   try {
     const blogs = await Blog.find({ owner: req.params.userId })
       .populate("owner")
@@ -289,3 +316,5 @@ exports.getAllBlogByUser = async (req, res) => {
     });
   }
 };
+
+module.exports = blogController;

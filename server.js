@@ -2,7 +2,28 @@ require("dotenv").config({ path: "./config/config.env" });
 const path = require("path");
 const express = require("express");
 const app = express();
-const cloudinary = require("cloudinary").v2;
+const cloudinary = require("cloudinary").v2,
+       pino = require('pino'),
+       config = require('./config'),
+       BLOGROUTES = require('./routes/blogRoutes'); 
+
+
+const logger = pino({
+  base: {
+    filename: __filename,
+  },
+  transport: {
+    target: 'pino-pretty',
+    options: {
+      colorize: true
+    }
+  }
+});
+let opts = {
+  L : logger 
+};
+
+let conf = config(opts);
 
 const connectDB = require("./config/DB");
 connectDB();
@@ -13,10 +34,12 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+let blogRoutes = new BLOGROUTES(opts);
+
 app.use(express.json());
 // app.use(express.static(path.join(__dirname, "./uploads/")));
 app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/blogs", require("./routes/blogRoutes"));
+app.use("/api/blogs", blogRoutes());
 app.use("/api/users", require("./routes/userRoutes"));
 // app.use("*/uploads", express.static("uploads"));
 

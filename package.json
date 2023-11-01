@@ -12,16 +12,22 @@
   },
   "license": "MIT",
   "dependencies": {
+    "aws-sdk": "^2.1483.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.26.3",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
+    "lgr": "https://github.com/paytm/lgr.git",
     "mongoose": "^5.12.2",
-    "multer": "^1.4.2"
+    "multer": "^1.4.4",
+    "pino": "^8.16.1",
+    "q": "^1.5.1",
+    "underscore": "^1.13.6"
   },
   "devDependencies": {
     "concurrently": "^6.0.0",
-    "nodemon": "^2.0.7"
+    "nodemon": "^2.0.7",
+    "pino-pretty": "^10.2.3"
   }
 }
